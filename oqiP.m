@@ -36,58 +36,61 @@ M=M-mu*N;
 
 Mq=M*q;
 Nq=N*q;
- if ipm==1
+if ipm==1
     [R,FLAG,p]=chol(M,'vector'); % for applying Z=inv(M) and normP
     if FLAG==0
         applP=@(q) applinv(q,R,p);
     else
-        error('N not positive definite!')
+        error('M not positive definite!')
     end
-   
+    normP=@(q) sqrt(q'*applP(q));
     nMq=sqrt(q'*Mq); %||Mq||_P
-    nNq=normP(Nq,R,p); %||Nq||_P
+    nNq=normP(Nq); %||Nq||_P
     w1=Mq/nMq;
     w2=Nq/nNq;
     w1w2=(q'*Nq)/(nMq*nNq);
     S=svd([Mq/norm(Mq) Nq/norm(Nq)]); %S(2) is the measure for lin. dependence of Mq and Nq
     k=0;
-    l=w1w2/abs(w1w2)*nMq/nNq;
+    l=w1w2/abs(w1w2)*nMq/nNq;   % Initial value for the quotient.    
+    quality1{1}(1)=S(2);        % Initial value for the quality of the 
+                                % eigenvector 
+
     while S(2)>tol
         k=k+1;
         z=1/sqrt(2+2*abs(w1w2))*(w1w2/abs(w1w2)*w1+w2);
         qhat=(M-l(k)*N)\z;
-        q=qhat/normP(qhat,R,p);
+        q=qhat/normP(qhat);
         if k>100
             break;
         end
         Mq=M*q;
         Nq=N*q;
         nMq=sqrt(q'*Mq);
-        nNq=normP(Nq,R,p);
+        nNq=normP(Nq);
         w1=Mq/nMq;
         w2=Nq/nNq;
         w1w2=(q'*Nq)/(nMq*nNq);
         S=svd([Mq/norm(Mq) Nq/norm(Nq)]);
-        quality(k)=S(2);
+        quality(k+1)=S(2);
         l(k+1)=w1w2/abs(w1w2)*nMq/nNq;
     end
-
- end
+    l=l+mu;
+end
 
 if ipm==2
-    [R,FLAG,p]=chol(N,'vector'); % for applying Z=inv(M) and normP
+    [R,FLAG,p]=chol(N,'vector'); % for applying Z=inv(N) and normP
     if FLAG==0
         applP=@(q) applinv(q,R,p);
     else
         error('N not positive definite!')
     end
-    %normP=@(q) sqrt(q'*applP(q));
-    nNq=normP(Nq,R,p);
-    nMq=normP(Mq,R,p);
+    normP=@(q) sqrt(q'*applP(q));
+    nNq=normP(Nq);
+    nMq=normP(Mq);
     w1=Mq/nMq;
     w2=Nq/nNq;
     w1w2=(q'*Mq)/(nMq*nNq);
-    l=w1w2/abs(w1w2)*nMq/nNq;
+    l=w1w2/abs(w1w2)*nMq/nNq;       % Initial value for the quotient.  
     sigma2=svds([Mq/norm(Mq) Nq/norm(Nq)],1,"smallest");
     sigmaold=2;
     k=0;
@@ -95,25 +98,22 @@ if ipm==2
         k=k+1;
         z=1/sqrt(2+2*abs(w1w2))*(w1w2/abs(w1w2)*w1+w2);
         qhat=(M-l(k)*N)\z;
-        q=qhat/normP(qhat,R,p);
+        q=qhat/normP(qhat);
         if k>100
             break;
         end
         Mq=M*q;
         Nq=N*q;
-        nMq=normP(Mq,R,p);
-        nNq=normP(Nq,R,p);
+        nMq=normP(Mq);
+        nNq=normP(Nq);
         w1=Mq/nMq;
         w2=Nq/nNq;
         w1w2=(q'*Mq)/(nMq*nNq);
         sigmaold=sigma2;
         sigma2=svds([Mq/norm(Mq) Nq/norm(Nq)],1,"smallest");
-        quality(k)=sigma2;
+        quality(k+1)=sigma2;
         l(k+1)=w1w2/abs(w1w2)*nMq/nNq;
     end
     l=l+mu;
 end
-
-
-
- end
+end
